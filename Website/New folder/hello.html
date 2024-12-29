@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f9;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .form-container, .admin-container, .conversations-container {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .message {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+
+    .reply {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #e2e8f0;
+      border: 1px solid #ddd;
+    }
+
+    .conversation {
+      margin-top: 20px;
+    }
+
+    .admin-container {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Contact Us</h1>
+
+<!-- Contact Form -->
+<div class="form-container">
+  <h2>Send us a Message</h2>
+  <form id="contactForm">
+    <input type="text" id="name" placeholder="Your Name" required>
+    <textarea id="message" placeholder="Your Message" rows="5" required></textarea>
+    <button type="submit">Send Message</button>
+  </form>
+</div>
+
+<!-- Admin Access Page -->
+<div class="admin-container">
+  <h2>Admin Access</h2>
+  <input type="password" id="adminCode" placeholder="Enter Secret Code" />
+  <button onclick="checkAdminCode()">Access Messages</button>
+  <div id="messagesList"></div>
+</div>
+
+<!-- Conversations Section -->
+<div class="conversations-container">
+  <h2>Conversation</h2>
+  <div id="conversation"></div>
+  <textarea id="adminReply" placeholder="Type your reply..." rows="5"></textarea>
+  <button onclick="sendReply()">Send Reply</button>
+</div>
+
+<script>
+  // Local storage key for messages
+  const storageKey = 'messages';
+
+  // Example secret admin code
+  const secretCode = 'admin123';
+
+  // Contact form submission
+  document.getElementById('contactForm').addEventListener('submit', function (event) {
+    event.preventDefault();
+
+    const name = document.getElementById('name').value;
+    const message = document.getElementById('message').value;
+
+    // Retrieve existing messages from localStorage or initialize if none
+    const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+    // Save the new message
+    const newMessage = { name, message, replies: [] };
+    messages.push(newMessage);
+
+    // Save updated messages array to localStorage
+    localStorage.setItem(storageKey, JSON.stringify(messages));
+
+    // Clear the form fields
+    document.getElementById('contactForm').reset();
+
+    alert('Your message has been sent!');
+  });
+
+  // Admin access page - Check secret code and display messages
+  function checkAdminCode() {
+    const inputCode = document.getElementById('adminCode').value;
+
+    if (inputCode === secretCode) {
+      document.querySelector('.admin-container').style.display = 'block';
+      document.getElementById('adminCode').value = '';
+      displayMessages();
+    } else {
+      alert('Incorrect secret code!');
+    }
+  }
+
+  // Display messages from local storage in admin view
+  function displayMessages() {
+    const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+    const messagesList = document.getElementById('messagesList');
+    messagesList.innerHTML = ''; // Clear previous content
+
+    messages.forEach((msg, index) => {
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message');
+      messageDiv.innerHTML = `<strong>${msg.name}:</strong> ${msg.message} 
+                              <button onclick="viewConversation(${index})">View Conversation</button>`;
+      messagesList.appendChild(messageDiv);
+    });
+  }
+
+  // View a specific message's conversation
+  function viewConversation(index) {
+    const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+    const selectedMessage = messages[index];
+
+    const conversationDiv = document.getElementById('conversation');
+    conversationDiv.innerHTML = `<strong>${selectedMessage.name}:</strong> ${selectedMessage.message}`;
+
+    // Display existing replies
+    selectedMessage.replies.forEach(reply => {
+      const replyDiv = document.createElement('div');
+      replyDiv.classList.add('reply');
+      replyDiv.innerHTML = `<strong>Admin:</strong> ${reply}`;
+      conversationDiv.appendChild(replyDiv);
+    });
+
+    // Store selected message index in localStorage
+    localStorage.setItem('currentMessageIndex', index);
+  }
+
+  // Send admin reply to selected message
+  function sendReply() {
+    const replyText = document.getElementById('adminReply').value;
+    if (!replyText) {
+      alert('Please enter a reply!');
+      return;
+    }
+
+    const messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+    const currentMessageIndex = localStorage.getItem('currentMessageIndex');
+    const messageToReply = messages[currentMessageIndex];
+
+    // Add reply to the message
+    messageToReply.replies.push(replyText);
+
+    // Save updated messages back to localStorage
+    localStorage.setItem(storageKey, JSON.stringify(messages));
+
+    // Clear the reply input and refresh conversation
+    document.getElementById('adminReply').value = '';
+    viewConversation(currentMessageIndex);
+  }
+
+  // If there's a message in local storage, show the messages
+  if (localStorage.getItem(storageKey)) {
+    document.querySelector('.admin-container').style.display = 'block';
+    displayMessages();
+  }
+</script>
+
+</body>
+</html>
